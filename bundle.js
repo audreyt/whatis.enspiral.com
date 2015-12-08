@@ -243,9 +243,9 @@ module.exports = function(options) {
 };
 
 },{}],8:[function(require,module,exports){
-var from = function(selectorOrElement, plugins) {
-  var parent = selectorOrElement.nodeType === 1 ? selectorOrElement : document.querySelector(selectorOrElement),
-    slides = [].filter.call(parent.children, function(el) { return el.nodeName !== 'SCRIPT'; }),
+var from = function(opts, plugins) {
+  var parent = (opts.parent || opts).nodeType === 1 ? (opts.parent || opts) : document.querySelector(opts.parent || opts),
+    slides = [].filter.call(typeof opts.slides === 'string' ? parent.querySelectorAll(opts.slides) : (opts.slides || parent.children), function(el) { return el.nodeName !== 'SCRIPT'; }),
     activeSlide = slides[0],
     listeners = {},
 
@@ -275,12 +275,11 @@ var from = function(selectorOrElement, plugins) {
 
     on = function(eventName, callback) {
       (listeners[eventName] || (listeners[eventName] = [])).push(callback);
+      return off.bind(null, eventName, callback);
+    },
 
-      return function() {
-        listeners[eventName] = listeners[eventName].filter(function(listener) {
-          return listener !== callback;
-        });
-      };
+    off = function(eventName, callback) {
+      listeners[eventName] = (listeners[eventName] || []).filter(function(listener) { return listener !== callback; });
     },
 
     fire = function(eventName, eventData) {
@@ -299,6 +298,7 @@ var from = function(selectorOrElement, plugins) {
 
     deck = {
       on: on,
+      off: off,
       fire: fire,
       slide: slide,
       next: step.bind(null, 1),
